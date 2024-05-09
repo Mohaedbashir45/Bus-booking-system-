@@ -18,6 +18,12 @@ const Register = () => {
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100">
       <div className="w-full max-w-md p-6 bg-white shadow rounded-md">
+      <h1 className="text-3xl font-bold mb-4 text-center text-gray-800">
+        Welcome to Basi Go
+      </h1>
+      <p className="text-gray-600 text-center mb-6">
+        Embark on your next adventure with ease – book your bus tickets seamlessly with us!
+      </p>
         <h1 className="text-2xl font-bold mb-4 text-center text-gray-800">
           Register
         </h1>
@@ -73,4 +79,4 @@ const Register = () => {
   );
 };
 
-export default Register;;
+export default Register;
