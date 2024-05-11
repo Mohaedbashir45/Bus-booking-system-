@@ -71,12 +71,7 @@ const Navbar = () => {
               >
                 Scheduling
               </a>
-              <a
-                href="/seat-booking"
-                className="text-white hover:bg-red-700 px-3 py-2 rounded-md text-sm font-medium"
-              >
-                Seat Booking
-              </a>
+             
             </div>
           </div>
         </div>
@@ -113,12 +108,6 @@ const Navbar = () => {
             className="text-gray-300 hover:bg-red-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
           >
             Scheduling
-          </a>
-          <a
-            href="/seat-booking"
-            className="text-gray-300 hover:bg-red-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
-          >
-            Seat Booking
           </a>
         </div>
       </div>

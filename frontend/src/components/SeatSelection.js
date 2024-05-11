@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Navbar from './Navbar'; // Import the Navbar component
 
 // Array of 42 seats
@@ -11,6 +11,7 @@ const seats = Array.from({ length: 42 }, (_, i) => {
 });
 
 const SeatSelection = () => {
+  const navigate = useNavigate();
   const location = useLocation();
   const {
     busName,
@@ -36,6 +37,9 @@ const SeatSelection = () => {
     setSelectedSeats((prevSelectedSeats) =>
       prevSelectedSeats.filter((seat) => seat.number !== seatNumber)
     );
+  };
+  const handlePayment = () => {
+    navigate('/payment', { state: { totalFare } });
   };
 
   return (
@@ -119,6 +123,12 @@ const SeatSelection = () => {
         <p className="text-3xl font-bold text-red-500">
           Total Fare: KSH {totalFare}
         </p>
+        <button
+            onClick={handlePayment}
+            className="mt-4 py-2 px-4 bg-red-500 text-white font-semibold rounded-md hover:bg-red-600 transition-colors duration-300"
+          >
+            Payment
+          </button>
       </div>
     </div>
     </>

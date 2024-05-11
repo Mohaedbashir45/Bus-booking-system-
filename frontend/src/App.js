@@ -6,6 +6,7 @@ import Register from './components/Register';
 import BusSearch from './components/BusSearch';
 import BusListing from './components/BusListing';
 import SeatSelection from './components/SeatSelection';
+import Payment from './components/Payment';
 
 
 
@@ -19,6 +20,7 @@ const App = () => {
         <Route path="/booking" element={<BusSearch />} />
         <Route path="/results" element = {<BusListing />} />
         <Route path="/seats" element={<SeatSelection/>} />
+        <Route path="/payment" element={<Payment />} />
         
       </Routes>
     </Router>
