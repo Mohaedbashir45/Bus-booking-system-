@@ -1,0 +1,6 @@
+flask
+flask-sqlalchemy
+flask-redis
+redis
+bcrypt
+dotenv
