@@ -41,6 +41,12 @@ const Navbar = () => {
           </div>
           <div className="hidden md:block md:order-3">
             <div className="ml-4 flex items-center space-x-4">
+            <a
+            href="/"
+            className="text-white hover:bg-red-700 px-3 py-2 rounded-md text-sm font-medium"
+          >
+            Home
+          </a>
               <a
                 href="/register"
                 className="text-white hover:bg-red-700 px-3 py-2 rounded-md text-sm font-medium"
@@ -48,10 +54,10 @@ const Navbar = () => {
                 Register
               </a>
               <a
-                href="/dashboard"
+                href="/booking"
                 className="text-white hover:bg-red-700 px-3 py-2 rounded-md text-sm font-medium"
               >
-                Dashboard
+                Buses
               </a>
               <a
                 href="/bus-management"
@@ -78,6 +84,12 @@ const Navbar = () => {
 
       <div className={`md:hidden ${navbarOpen ? 'block' : 'hidden'}`}>
         <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+        <a
+            href="/"
+            className="text-gray-300 hover:bg-red-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
+          >
+            Home
+          </a>
           <a
             href="/register"
             className="text-gray-300 hover:bg-red-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
@@ -85,10 +97,10 @@ const Navbar = () => {
             Register
           </a>
           <a
-            href="/dashboard"
+            href="/booking"
             className="text-gray-300 hover:bg-red-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
           >
-            Dashboard
+            Buses
           </a>
           <a
             href="/bus-management"
