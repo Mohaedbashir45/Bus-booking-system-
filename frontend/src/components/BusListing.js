@@ -1,9 +1,24 @@
 import React from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
 
 const BusListingCard = ({ busName, route, departureTime, arrivalTime, remainingSeats, normalPrice, vipPrice }) => {
-  return (
+    const navigate = useNavigate();
+    const handleSelectSeat = () => {
+        navigate('/seats', {
+          state: {
+            busName,
+            route,
+            departureTime,
+            arrivalTime,
+            remainingSeats,
+            normalPrice,
+            vipPrice,
+          },
+        });
+      };
+    
+    return (
     <div className="bg-white rounded-lg shadow-md p-6 col-span-1">
       <div className="flex items-center mb-4">
         <h3 className="text-lg font-bold mr-2">{busName}</h3>
@@ -26,7 +41,9 @@ const BusListingCard = ({ busName, route, departureTime, arrivalTime, remainingS
           <p className="text-gray-600">VIP: KSH {vipPrice}</p>
         </div>
       </div>
-      <button className="w-full py-2 bg-red-500 text-white font-bold rounded-md hover:bg-red-600 transition-colors">
+      <button className="w-full py-2 bg-red-500 text-white font-bold rounded-md hover:bg-red-600 transition-colors"
+        onClick={handleSelectSeat}
+       >
         Select Seat
       </button>
     </div>
