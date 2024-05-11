@@ -1,3 +1,4 @@
+# models.py
 from flask_sqlalchemy import SQLAlchemy
 from uuid import uuid4
 
@@ -13,9 +14,11 @@ class User(db.Model):
     password = db.Column(db.Text, nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
     is_driver = db.Column(db.Boolean, default=False)
+    is_passenger = db.Column(db.Boolean, default=False)  # New field for passengers
 
-    def __init__(self, email, password, is_admin=False, is_driver=False):
+    def __init__(self, email, password, is_admin=False, is_driver=False, is_passenger=False):
         self.email = email
         self.password = password
         self.is_admin = is_admin
         self.is_driver = is_driver
+        self.is_passenger = is_passenger
