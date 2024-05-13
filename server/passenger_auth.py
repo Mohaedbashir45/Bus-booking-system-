@@ -1,12 +1,12 @@
 from flask import Blueprint, session, jsonify, request
-from models import User
+from models import db, User
+from flask_bcrypt import Bcrypt
 
+bcrypt = Bcrypt()
 passenger_auth_blueprint = Blueprint('passenger_auth', __name__)
 
 @passenger_auth_blueprint.route('/register/passenger', methods=['POST'])
 def register_passenger():
-    from app import bcrypt, db  # Import bcrypt and db within the function
-    
     email = request.json.get("email")
     password = request.json.get("password")
 
@@ -30,8 +30,6 @@ def register_passenger():
 
 @passenger_auth_blueprint.route('/login/passenger', methods=['POST'])
 def login_passenger():
-    from app import bcrypt, db  # Import bcrypt and db within the function
-    
     email = request.json.get("email")
     password = request.json.get("password")
 
@@ -53,8 +51,6 @@ def login_passenger():
 
 @passenger_auth_blueprint.route('/logout/passenger', methods=['POST'])
 def logout_passenger():
-    from app import session  # Import session within the function
-    
     if "user_id" in session:
         session.pop("user_id")
         return jsonify({"message": "Logout successful"}), 200
