@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { FaCalendarAlt, FaMapMarkerAlt,FaBus } from 'react-icons/fa';
+import React, { useState, useContext } from 'react';
+import { FaCalendarAlt, FaMapMarkerAlt } from 'react-icons/fa';
 import Navbar from './Navbar';
 import { useNavigate } from 'react-router-dom';
+import { JourneyContext } from './JourneyContext';
 
 const BusSearch = () => {
+  const { upcomingJourneys } = useContext(JourneyContext);
   const [boardingPoint, setBoardingPoint] = useState('');
   const [destination, setDestination] = useState('');
   const [travelDate, setTravelDate] = useState('');
@@ -25,41 +27,7 @@ const BusSearch = () => {
     // Navigate to the /results route with the filtered journeys
     navigate('/results', { state: { filteredJourneys } });
   };
-  const upcomingJourneys = [
-    {
-      id: 1,
-      Bus: 'Mbukinya Bus Company',
-      boardingPoint: 'Nairobi CBD',
-      dropOffPoint: 'Kakamega,shamakhokho',
-      departureTime: '09:00 AM',
-      arrivalTime: '11:00 PM',
-    },
-    {
-      id: 2,
-      Bus:'Mash Poa',
-      boardingPoint: 'Nairobi,Tea Room',
-      dropOffPoint: 'Mombasa',
-      departureTime: '8:00 PM',
-      arrivalTime: '06:00 AM',
-    },
-    {
-      id: 3,
-      Bus:'GuardianAngel Bus Company',
-      boardingPoint: 'Kisumu City',
-      dropOffPoint: 'Nairobi next to Railways station',
-      departureTime: '07:00 AM',
-      arrivalTime: '04:00 PM',
-    },
-    {
-      id: 4,
-      Bus:'Chania Executive',
-      boardingPoint: 'Nairobi,Accra Road',
-      dropOffPoint: 'Nyeri',
-      departureTime: '10:00 AM',
-      arrivalTime: '02:00 PM',
-    },
-  ];
-
+  
   return (
     <div className="min-h-screen">
       <Navbar />
@@ -146,46 +114,40 @@ const BusSearch = () => {
           </form>
         </div>
       </div>
-      {/* Upcoming Journeys Section */}
-      <div className="bg-gray-100 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold mb-8 text-gray-800">
-            Upcoming Journeys
-          </h2>
+      <div className="bg-white rounded-lg shadow-md p-8">
+          <h2 className="text-xl font-bold mb-4 text-red-500">Upcoming Journeys</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {upcomingJourneys.map((journey) => (
+            {upcomingJourneys.map((journey, index) => (
               <div
-                key={journey.id}
-                className="bg-white rounded-lg shadow-md p-6"
+                key={index}
+                className="bg-gray-100 rounded-lg shadow-md p-6 flex flex-col justify-between"
               >
-                <div className="flex items-center mb-4">
-                  <FaBus className="text-red-500 mr-2" />
-                  <h3 className="text-lg font-bold">{journey.Bus}</h3>
-                </div>
-                <p className="text-gray-600 mb-2">
-                  <FaMapMarkerAlt className="inline-block mr-2" />
-                  {journey.boardingPoint}
-                </p>
-                <p className="text-gray-600 mb-2">
-                  <FaMapMarkerAlt className="inline-block mr-2" />
-                  {journey.dropOffPoint}
-                </p>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-600">Departure:</p>
-                    <p className="font-bold">{journey.departureTime}</p>
+                <div>
+                  <div className="flex items-center mb-2">
+                    <h3 className="text-lg font-bold text-red-500 mr-2">{journey.Bus}</h3>
                   </div>
-                  <div>
-                    <p className="text-gray-600">Arrival:</p>
-                    <p className="font-bold">{journey.arrivalTime}</p>
-                  </div>
+                  <p className="text-gray-600 mb-1">
+                    Boarding Point: {journey.boardingPoint}
+                  </p>
+                  <p className="text-gray-600 mb-1">
+                    Drop Off Point: {journey.dropOffPoint}
+                  </p>
+                  <p className="text-gray-600 mb-1">
+                    Departure Time: {journey.departureTime}
+                  </p>
+                  <p className="text-gray-600 mb-1">
+                    Arrival Time: {journey.arrivalTime}
+                  </p>
+                  <p className="text-gray-600 mb-1">Seats: {journey.seats}</p>
+                  <p className="text-gray-600 mb-1">
+                    Ticket Price: Ksh {journey.ticketPrice}
+                  </p>
                 </div>
               </div>
             ))}
           </div>
         </div>
       </div>
-    </div>
   );
 };
 

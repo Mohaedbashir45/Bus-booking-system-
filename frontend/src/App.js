@@ -7,12 +7,14 @@ import BusSearch from './components/BusSearch';
 import BusListing from './components/BusListing';
 import SeatSelection from './components/SeatSelection';
 import Payment from './components/Payment';
-
+import AdminDashboard from './components/AdminDashboard';
+import { JourneyProvider } from './components/JourneyContext';
 
 
 const App = () => {
   return (
     <Router>
+      <JourneyProvider>
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/register" element={<Register />} />
@@ -21,8 +23,9 @@ const App = () => {
         <Route path="/results" element = {<BusListing />} />
         <Route path="/seats" element={<SeatSelection/>} />
         <Route path="/payment" element={<Payment />} />
-        
-      </Routes>
+        <Route path="/admin" element={<AdminDashboard />} />
+        </Routes>
+      </JourneyProvider>
     </Router>
   );
 };
