@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FaBars, FaTimes } from 'react-icons/fa';
-
+import { Link } from 'react-router-dom';
 
 const Navbar = () => {
   const [navbarOpen, setNavbarOpen] = useState(false);
@@ -32,21 +32,23 @@ const Navbar = () => {
             </div>
           </div>
           <div className="flex-shrink-0 md:order-1 flex items-center">
-          <img src="./logo.jpg" alt="Company Logo" className="h-16 w-16 rounded-full border-2 border-gray-300 p-1 mr-4" />
-
-
-            <a href="/" className="text-white font-bold text-xl">
+            <img
+              src="./logo.jpg"
+              alt="Company Logo"
+              className="h-16 w-16 rounded-full border-2 border-gray-300 p-1 mr-4"
+            />
+            <a href="/" className="text-white font-bold text-2xl">
               Basi Go
             </a>
           </div>
           <div className="hidden md:block md:order-3">
             <div className="ml-4 flex items-center space-x-4">
-            <a
-            href="/"
-            className="text-white hover:bg-red-700 px-3 py-2 rounded-md text-sm font-medium"
-          >
-            Home
-          </a>
+              <a
+                href="/"
+                className="text-white hover:bg-red-700 px-3 py-2 rounded-md text-sm font-medium"
+              >
+                Home
+              </a>
               <a
                 href="/register"
                 className="text-white hover:bg-red-700 px-3 py-2 rounded-md text-sm font-medium"
@@ -60,26 +62,28 @@ const Navbar = () => {
                 Buses
               </a>
               <a
-                href="/bus-management"
+                href="/admin"
                 className="text-white hover:bg-red-700 px-3 py-2 rounded-md text-sm font-medium"
               >
-                Bus Management
+                Driver
               </a>
-              <a
-                href="/scheduling"
+              <Link
+                to="/login"
                 className="text-white hover:bg-red-700 px-3 py-2 rounded-md text-sm font-medium"
               >
-                Scheduling
-              </a>
-             
+                Login
+              </Link>
             </div>
           </div>
         </div>
       </div>
-
-      <div className={`md:hidden ${navbarOpen ? 'block' : 'hidden'}`}>
+      <div
+        className={`md:hidden ${
+          navbarOpen ? 'block' : 'hidden'
+        } transition-all duration-300 ease-in-out`}
+      >
         <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-        <a
+          <a
             href="/"
             className="text-gray-300 hover:bg-red-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
           >
@@ -98,17 +102,17 @@ const Navbar = () => {
             Buses
           </a>
           <a
-            href="/bus-management"
+            href="/admin"
             className="text-gray-300 hover:bg-red-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
           >
-            Bus Management
+            Driver
           </a>
-          <a
-            href="/scheduling"
+          <Link
+            to="/login"
             className="text-gray-300 hover:bg-red-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
           >
-            Scheduling
-          </a>
+            Login
+          </Link>
         </div>
       </div>
     </nav>
