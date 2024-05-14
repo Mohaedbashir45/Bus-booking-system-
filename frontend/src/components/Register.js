@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useFormik } from 'formik';
 import { Link } from 'react-router-dom';
 import Navbar from './Navbar';
+import axios from 'axios';
 
 const Register = () => {
+  const [userType, setUserType] = useState('customer');
+
   const formik = useFormik({
     initialValues: {
       name: '',
@@ -11,8 +14,26 @@ const Register = () => {
       password: '',
       confirmPassword: '',
     },
-    onSubmit: (values) => {
-      console.log(values);
+    onSubmit: async (values) => {
+      try {
+        const response = await axios.post('/register', {
+          name: values.name,
+          email: values.email,
+          password: values.password,
+          userType: userType,
+        });
+        console.log(response.data.message);
+        // Handle successful registration (e.g., show a success message, redirect to login page)
+        if (response.data.success) {
+          alert(response.data.message);
+          // Redirect to login page or perform any other action
+        } else {
+          alert('Registration failed. Please try again.');
+        }
+      } catch (error) {
+        console.error(error);
+        alert('An error occurred during registration. Please try again.');
+      }
     },
   });
 
@@ -38,6 +59,41 @@ const Register = () => {
                 Register
               </h1>
               <form onSubmit={formik.handleSubmit}>
+                <div className="mb-4">
+                  <label className="block mb-2 font-semibold text-gray-700">
+                    User Type
+                  </label>
+                  <div className="flex items-center">
+                    <div className="flex items-center mr-4">
+                      <input
+                        type="radio"
+                        id="customer"
+                        name="userType"
+                        value="customer"
+                        checked={userType === 'customer'}
+                        onChange={() => setUserType('customer')}
+                        className="form-radio text-yellow-400 mr-2"
+                      />
+                      <label htmlFor="customer" className="text-gray-700">
+                        Customer
+                      </label>
+                    </div>
+                    <div className="flex items-center">
+                      <input
+                        type="radio"
+                        id="admin"
+                        name="userType"
+                        value="admin"
+                        checked={userType === 'admin'}
+                        onChange={() => setUserType('admin')}
+                        className="form-radio text-yellow-400 mr-2"
+                      />
+                      <label htmlFor="admin" className="text-gray-700">
+                        Driver
+                      </label>
+                    </div>
+                  </div>
+                </div>
                 <input
                   id="name"
                   name="name"
