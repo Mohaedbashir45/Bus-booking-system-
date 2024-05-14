@@ -60,10 +60,10 @@ const Navbar = () => {
                 Buses
               </a>
               <a
-                href="/bus-management"
+                href="/admin"
                 className="text-white hover:bg-red-700 px-3 py-2 rounded-md text-sm font-medium"
               >
-                Bus Management
+                Driver
               </a>
               <a
                 href="/scheduling"
@@ -98,10 +98,10 @@ const Navbar = () => {
             Buses
           </a>
           <a
-            href="/bus-management"
+            href="/admin"
             className="text-gray-300 hover:bg-red-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
           >
-            Bus Management
+            Driver
           </a>
           <a
             href="/scheduling"
