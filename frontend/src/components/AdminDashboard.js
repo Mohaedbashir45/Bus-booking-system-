@@ -156,7 +156,7 @@ const AdminDashboard = () => {
       <Navbar />
       <div className="bg-red-500 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl font-bold text-white mb-4">Admin Dashboard</h1>
+          <h1 className="text-4xl font-bold text-white mb-4">Driver's Dashboard</h1>
           <p className="text-white text-lg">
             Welcome to the Admin Dashboard! Here, you can manage and add new journeys.
           </p>
