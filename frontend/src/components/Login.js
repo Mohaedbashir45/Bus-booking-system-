@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useFormik } from 'formik';
+import axios from 'axios';
 import Navbar from './Navbar';
 
 const Login = () => {
@@ -10,10 +11,26 @@ const Login = () => {
       email: '',
       password: '',
     },
-    onSubmit: (values) => {
-      console.log('User Type:', userType);
-      console.log('Form Values:', values);
-      // Handle login logic here based on user type
+    onSubmit: async (values) => {
+      try {
+        const response = await axios.post('/login', {
+          email: values.email,
+          password: values.password,
+          userType: userType,
+        });
+        console.log(response.data.message);
+        // Handle successful login (e.g., store user data, redirect to dashboard)
+        if (response.data.success) {
+          // Store user data in local storage or state
+          localStorage.setItem('userData', JSON.stringify(response.data.userData));
+          // Redirect to dashboard or perform any other action
+        } else {
+          alert('Invalid credentials. Please try again.');
+        }
+      } catch (error) {
+        console.error(error);
+        alert('An error occurred during login. Please try again.');
+      }
     },
   });
 
