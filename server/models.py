@@ -16,20 +16,16 @@ def get_uuid():
     return uuid4().hex
 
 class User(db.Model):
-    __tablename__ = "users"
-    id = db.Column(db.String(32), primary_key=True, default=get_uuid)
-    email = db.Column(db.String(255), unique=True, nullable=False) 
-    password = db.Column(db.Text, nullable=False)
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(60), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
     is_driver = db.Column(db.Boolean, default=False)
-    is_passenger = db.Column(db.Boolean, default=False)  # New field for passengers
+    is_passenger = db.Column(db.Boolean, default=True)
 
-    def __init__(self, email, password, is_admin=False, is_driver=False, is_passenger=False):
-        self.email = email
-        self.password = password
-        self.is_admin = is_admin
-        self.is_driver = is_driver
-        self.is_passenger = is_passenger
+    def __repr__(self):
+        return f"User('{self.name}', '{self.email}')"
 
 # from flask_sqlalchemy import SQLAlchemy
 # from sqlalchemy import MetaData
@@ -44,8 +40,9 @@ class Bus(db.Model):
     departure_time = db.Column(db.DateTime, nullable=False)
 
     # Define relationship with Driver
-    driver_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    driver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # Change 'users' to 'user'
     driver = db.relationship('User', backref=db.backref('buses', lazy=True))
+
 
 class Booking(db.Model):
     __tablename__ = 'bookings'

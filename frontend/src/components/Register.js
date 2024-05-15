@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFormik } from 'formik';
 import { Link } from 'react-router-dom';
 import Navbar from './Navbar';
@@ -6,6 +6,8 @@ import axios from 'axios';
 
 const Register = () => {
   const [userType, setUserType] = useState('customer');
+  // eslint-disable-next-line
+  const [isSubmitting, setIsSubmitting] = useState(false); // State to track if form is submitting
 
   const formik = useFormik({
     initialValues: {
@@ -15,8 +17,9 @@ const Register = () => {
       confirmPassword: '',
     },
     onSubmit: async (values) => {
+      setIsSubmitting(true); // Set isSubmitting to true when form is submitted
       try {
-        const response = await axios.post('/register', {
+        const response = await axios.post('http://127.0.0.1:5555/register', {
           name: values.name,
           email: values.email,
           password: values.password,
@@ -31,11 +34,23 @@ const Register = () => {
           alert('Registration failed. Please try again.');
         }
       } catch (error) {
-        console.error(error);
-        alert('An error occurred during registration. Please try again.');
+        if (error.response && error.response.status === 409) {
+          // Handle the specific case where the user already exists
+          alert('User with this email already exists. Please try another email or login.');
+        } else {
+          console.error(error);
+          alert('An error occurred during registration. Please try again.');
+        }
+      } finally {
+        setIsSubmitting(false); // Set isSubmitting back to false when request is complete
       }
     },
   });
+
+  useEffect(() => {
+    // Reset isSubmitting to false when component unmounts
+    return () => setIsSubmitting(false);
+  }, []);
 
   return (
     <div>
@@ -131,11 +146,12 @@ const Register = () => {
                   value={formik.values.confirmPassword}
                 />
                 <button
-                  type="submit"
-                  className="w-full py-2 mb-2 bg-yellow-400 text-white font-semibold rounded hover:bg-yellow-500 transition-colors"
-                >
-                  Register
-                </button>
+      type="submit"
+      disabled={isSubmitting} // Disable button when form is submitting
+      className="w-full py-2 mb-2 bg-yellow-400 text-white font-semibold rounded hover:bg-yellow-500 transition-colors"
+    >
+      {isSubmitting ? 'Registering...' : 'Register'}
+    </button>
                 <p className="text-center text-gray-600">
                   Already have an account?{' '}
                   <Link

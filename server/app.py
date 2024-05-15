@@ -13,14 +13,10 @@ from passenger_auth import passenger_auth_blueprint
 
 app = Flask(__name__)
 app.config.from_object(ApplicationConfig)
-
 bcrypt = Bcrypt(app)
 CORS(app, supports_credentials=True)
-Session(app)  # Initialize Flask-Session with the Flask app
-db.init_app(app)
-
-with app.app_context():
-    db.create_all()
+Session(app)
+db.init_app(app)  # Initialize Flask-SQLAlchemy with the Flask app
 
 # Configure SQLAlchemy
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
@@ -29,13 +25,17 @@ app.json.compact = False
 
 migrate = Migrate(app, db)
 
-db.init_app(app)
-
-
 # Register authentication blueprints
 app.register_blueprint(admin_auth_blueprint)
 app.register_blueprint(driver_auth_blueprint)
 app.register_blueprint(passenger_auth_blueprint)
+
+# Create database tables within the application context
+with app.app_context():
+    db.create_all()
+
+if __name__ == '__main__':
+    app.run(debug=True)
 
 @app.route('/')
 def index():
@@ -56,15 +56,24 @@ def get_current_user():
 
 @app.route("/register", methods=["POST"])
 def register():
-    email = request.json.get("email")
-    password = request.json.get("password")
+    data = request.get_json()
+    name = data.get("name")
+    email = data.get("email")
+    password = data.get("password")
+    user_type = data.get("userType")
 
     user_exists = User.query.filter_by(email=email).first() is not None
 
     if user_exists:
-        return jsonify({"error":"User already exists"}), 409
+        return jsonify({"error": "User already exists"}), 409
+
     hashed_password = bcrypt.generate_password_hash(password).decode("utf-8")
-    new_user = User(email=email , password=hashed_password)
+
+    if user_type == "customer":
+        new_user = User(name=name, email=email, password=hashed_password, is_passenger=True)
+    elif user_type == "admin":
+        new_user = User(name=name, email=email, password=hashed_password, is_admin=True)
+
     db.session.add(new_user)
     db.session.commit()
 
@@ -72,9 +81,11 @@ def register():
 
     return jsonify({
         "id": new_user.id,
+        "name": new_user.name,
         "email": new_user.email,
+        "success": True,
+        "message": "Registration successful!"
     })
-
 @app.route("/login", methods=["POST"])
 def login_user():
     email = request.json.get("email")

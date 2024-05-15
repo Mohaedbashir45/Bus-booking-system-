@@ -13,7 +13,7 @@ const Login = () => {
     },
     onSubmit: async (values) => {
       try {
-        const response = await axios.post('/login', {
+        const response = await axios.post('http://127.0.0.1:5555/login', {
           email: values.email,
           password: values.password,
           userType: userType,

@@ -71,7 +71,7 @@ const AdminDashboard = () => {
   const handleAddBus = async () => {
     try {
       // Make an API call to add a new bus
-      const response = await fetch('/api/buses', {
+      const response = await fetch('http://127.0.0.1:5555/buses', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
