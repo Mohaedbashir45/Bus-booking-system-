@@ -9,6 +9,7 @@ import SeatSelection from './components/SeatSelection';
 import Payment from './components/Payment';
 import AdminDashboard from './components/AdminDashboard';
 import { JourneyProvider } from './components/JourneyContext';
+import Dashboard from './components/Dashboard';
 
 
 const App = () => {
@@ -24,6 +25,7 @@ const App = () => {
         <Route path="/seats" element={<SeatSelection/>} />
         <Route path="/payment" element={<Payment />} />
         <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         </Routes>
       </JourneyProvider>
     </Router>

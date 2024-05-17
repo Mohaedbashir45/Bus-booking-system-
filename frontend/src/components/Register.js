@@ -1,41 +1,59 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFormik } from 'formik';
 import { Link } from 'react-router-dom';
 import Navbar from './Navbar';
-import axios from 'axios';
 
 const Register = () => {
-  const [userType, setUserType] = useState('customer');
+  const [userType, setUserType] = useState('passenger');
+  const [registrationMessage, setRegistrationMessage] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const formik = useFormik({
     initialValues: {
-      name: '',
+      username: '',
       email: '',
       password: '',
       confirmPassword: '',
     },
     onSubmit: async (values) => {
+      setIsSubmitting(true);
       try {
-        const response = await axios.post('/register', {
-          name: values.name,
-          email: values.email,
-          password: values.password,
-          userType: userType,
+        const response = await fetch('http://127.0.0.1:5555/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            username: values.username,
+            email: values.email,
+            password: values.password,
+            role: userType,
+          }),
         });
-        console.log(response.data.message);
-        // Handle successful registration (e.g., show a success message, redirect to login page)
-        if (response.data.success) {
-          alert(response.data.message);
-          // Redirect to login page or perform any other action
+
+        if (response.status >= 200 && response.status < 300) {
+          setRegistrationMessage('Registration successful. Welcome!');
+          resetForm();
         } else {
-          alert('Registration failed. Please try again.');
+          setRegistrationMessage('Registration failed. Please try again.');
         }
       } catch (error) {
         console.error(error);
-        alert('An error occurred during registration. Please try again.');
+        setRegistrationMessage('An error occurred during registration. Please try again.');
+      } finally {
+        setIsSubmitting(false);
       }
     },
   });
+
+  const resetForm = () => {
+    formik.resetForm();
+    setUserType('passenger');
+  };
+
+  useEffect(() => {
+    return () => setRegistrationMessage(null);
+  }, []);
 
   return (
     <div>
@@ -58,6 +76,11 @@ const Register = () => {
               <h1 className="text-2xl font-bold mb-4 text-center text-gray-800">
                 Register
               </h1>
+              {registrationMessage && (
+                <div className="mb-4 p-2 bg-red-200 text-red-800 rounded">
+                  {registrationMessage}
+                </div>
+              )}
               <form onSubmit={formik.handleSubmit}>
                 <div className="mb-4">
                   <label className="block mb-2 font-semibold text-gray-700">
@@ -67,15 +90,29 @@ const Register = () => {
                     <div className="flex items-center mr-4">
                       <input
                         type="radio"
-                        id="customer"
+                        id="passenger"
                         name="userType"
-                        value="customer"
-                        checked={userType === 'customer'}
-                        onChange={() => setUserType('customer')}
+                        value="passenger"
+                        checked={userType === 'passenger'}
+                        onChange={() => setUserType('passenger')}
                         className="form-radio text-yellow-400 mr-2"
                       />
-                      <label htmlFor="customer" className="text-gray-700">
-                        Customer
+                      <label htmlFor="passenger" className="text-gray-700">
+                        Passenger
+                      </label>
+                    </div>
+                    <div className="flex items-center mr-4">
+                      <input
+                        type="radio"
+                        id="driver"
+                        name="userType"
+                        value="driver"
+                        checked={userType === 'driver'}
+                        onChange={() => setUserType('driver')}
+                        className="form-radio text-yellow-400 mr-2"
+                      />
+                      <label htmlFor="driver" className="text-gray-700">
+                        Driver
                       </label>
                     </div>
                     <div className="flex items-center">
@@ -89,19 +126,19 @@ const Register = () => {
                         className="form-radio text-yellow-400 mr-2"
                       />
                       <label htmlFor="admin" className="text-gray-700">
-                        Driver
+                        Admin
                       </label>
                     </div>
                   </div>
                 </div>
                 <input
-                  id="name"
-                  name="name"
+                  id="username"
+                  name="username"
                   type="text"
-                  placeholder="Name"
+                  placeholder="Username"
                   className="w-full mb-2 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-yellow-400"
                   onChange={formik.handleChange}
-                  value={formik.values.name}
+                  value={formik.values.username}
                 />
                 <input
                   id="email"
@@ -133,8 +170,9 @@ const Register = () => {
                 <button
                   type="submit"
                   className="w-full py-2 mb-2 bg-yellow-400 text-white font-semibold rounded hover:bg-yellow-500 transition-colors"
+                  disabled={isSubmitting}
                 >
-                  Register
+                  {isSubmitting ? 'Registering...' : 'Register'}
                 </button>
                 <p className="text-center text-gray-600">
                   Already have an account?{' '}
