@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useFormik } from 'formik';
-import axios from 'axios';
+import { Link, useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
 
 const Login = () => {
-  const [userType, setUserType] = useState('customer');
+  const [userType, setUserType] = useState('passenger');
+  const [loginMessage, setLoginMessage] = useState(null);
+  const navigate = useNavigate();
 
   const formik = useFormik({
     initialValues: {
@@ -13,23 +15,30 @@ const Login = () => {
     },
     onSubmit: async (values) => {
       try {
-        const response = await axios.post('http://127.0.0.1:5555/login', {
-          email: values.email,
-          password: values.password,
-          userType: userType,
-        });
-        console.log(response.data.message);
-        // Handle successful login (e.g., store user data, redirect to dashboard)
-        if (response.data.success) {
-          // Store user data in local storage or state
-          localStorage.setItem('userData', JSON.stringify(response.data.userData));
-          // Redirect to dashboard or perform any other action
+        const response = await fetch('http://127.0.0.1:5555/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: values.email,
+            password: values.password,
+            role: userType,
+          }),
+
+        if (response.ok) {
+          const data = await response.json();
+          // Store the token in localStorage
+          localStorage.setItem('accessToken', data.token);
+          // Redirect to booking route
+          navigate('/booking');
         } else {
-          alert('Invalid credentials. Please try again.');
+          const data = await response.json();
+          setLoginMessage(data.error || 'Invalid credentials. Please try again.');
         }
       } catch (error) {
         console.error(error);
-        alert('An error occurred during login. Please try again.');
+        setLoginMessage('An error occurred during login. Please try again.');
       }
     },
   });
@@ -47,6 +56,11 @@ const Login = () => {
       </div>
       <div className="flex justify-center items-center min-h-screen bg-gray-100">
         <div className="w-full max-w-md p-8 bg-white shadow-md rounded-md">
+          {loginMessage && (
+            <div className="mb-4 p-2 bg-red-200 text-red-800 rounded">
+              {loginMessage}
+            </div>
+          )}
           <form onSubmit={formik.handleSubmit}>
             <div className="mb-4">
               <label className="block mb-2 font-semibold text-gray-700">
@@ -56,15 +70,29 @@ const Login = () => {
                 <div className="flex items-center mr-4">
                   <input
                     type="radio"
-                    id="customer"
+                    id="passenger"
                     name="userType"
-                    value="customer"
-                    checked={userType === 'customer'}
-                    onChange={() => setUserType('customer')}
+                    value="passenger"
+                    checked={userType === 'passenger'}
+                    onChange={() => setUserType('passenger')}
                     className="form-radio text-red-500 mr-2"
                   />
-                  <label htmlFor="customer" className="text-gray-700">
-                    Customer
+                  <label htmlFor="passenger" className="text-gray-700">
+                    Passenger
+                  </label>
+                </div>
+                <div className="flex items-center mr-4">
+                  <input
+                    type="radio"
+                    id="driver"
+                    name="userType"
+                    value="driver"
+                    checked={userType === 'driver'}
+                    onChange={() => setUserType('driver')}
+                    className="form-radio text-red-500 mr-2"
+                  />
+                  <label htmlFor="driver" className="text-gray-700">
+                    Driver
                   </label>
                 </div>
                 <div className="flex items-center">
@@ -78,7 +106,7 @@ const Login = () => {
                     className="form-radio text-red-500 mr-2"
                   />
                   <label htmlFor="admin" className="text-gray-700">
-                    Driver
+                    Admin
                   </label>
                 </div>
               </div>
@@ -116,6 +144,12 @@ const Login = () => {
               Login
             </button>
           </form>
+          <p className="mt-4 text-center text-gray-600">
+            Don't have an account?{' '}
+            <Link to="/register" className="text-red-500 hover:text-red-600">
+              Register
+            </Link>
+          </p>
         </div>
       </div>
     </>

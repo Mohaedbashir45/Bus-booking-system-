@@ -1,173 +1,132 @@
-from flask import Flask, request, jsonify, session
+
+from flask import Flask, request, jsonify
 from flask_migrate import Migrate
-from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from flask_session import Session
 from datetime import datetime
-from flask import abort
-from config import ApplicationConfig
-from models import db, User,Bus,Booking
-from admin_auth import admin_auth_blueprint
-from driver_auth import driver_auth_blueprint
-from passenger_auth import passenger_auth_blueprint
+from flask_login import LoginManager, login_user, logout_user, current_user, login_required
+from models import db, Admin, Passenger, Driver, Bus, Booking
+from datetime import datetime
+from auth import token_required, verify_token, generate_token
 
 app = Flask(__name__)
-app.config.from_object(ApplicationConfig)
-bcrypt = Bcrypt(app)
-CORS(app, supports_credentials=True)
-Session(app)
-db.init_app(app)  # Initialize Flask-SQLAlchemy with the Flask app
+cors = CORS(app, resources={r"/buses/*": {
+    "origins": ["http://localhost:3000"],
+    "supports_credentials": True
+}})
+
 
 # Configure SQLAlchemy
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.json.compact = False
 
+
+# Configure Flask-Session
+app.config['SESSION_TYPE'] = 'filesystem'
+
+# Initialize extensions
+db.init_app(app)
 migrate = Migrate(app, db)
+Session(app)
+login_manager = LoginManager()
+login_manager.init_app(app)
 
-# Register authentication blueprints
-app.register_blueprint(admin_auth_blueprint)
-app.register_blueprint(driver_auth_blueprint)
-app.register_blueprint(passenger_auth_blueprint)
+@login_manager.user_loader
+def load_user(user_id):
+    return Passenger.query.get(int(user_id)) or Driver.query.get(int(user_id)) or Admin.query.get(int(user_id))
 
-# Create database tables within the application context
-with app.app_context():
-    db.create_all()
-
-if __name__ == '__main__':
-    app.run(debug=True)
 
 @app.route('/')
 def index():
     return "Welcome to the Go-Bus API"
 
-@app.route('/@me')
-def get_current_user():
-    user_id = session.get("user_id")
-    if not user_id:
-        return jsonify({"error": "Unauthorized"}), 401
-    
-    user = User.query.filter_by(id=user_id).first()
-    return jsonify({
-        "id": user.id,
-        "email": user.email,
-    })
 
-
-@app.route("/register", methods=["POST"])
+@app.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
-    name = data.get("name")
-    email = data.get("email")
-    password = data.get("password")
-    user_type = data.get("userType")
+    username = data.get('username')
+    email = data.get('email')
+    password = data.get('password')
+    role = data.get('role')  # Get the role from the request
 
-    user_exists = User.query.filter_by(email=email).first() is not None
-
-    if user_exists:
-        return jsonify({"error": "User already exists"}), 409
-
-    hashed_password = bcrypt.generate_password_hash(password).decode("utf-8")
-
-    if user_type == "customer":
-        new_user = User(name=name, email=email, password=hashed_password, is_passenger=True)
-    elif user_type == "admin":
-        new_user = User(name=name, email=email, password=hashed_password, is_admin=True)
-
-    db.session.add(new_user)
-    db.session.commit()
-
-    session["user_id"] = new_user.id
-
-    return jsonify({
-        "id": new_user.id,
-        "name": new_user.name,
-        "email": new_user.email,
-        "success": True,
-        "message": "Registration successful!"
-    })
-@app.route("/login", methods=["POST"])
-def login_user():
-    email = request.json.get("email")
-    password = request.json.get("password")
-
-    user = User.query.filter_by(email=email).first()
-
-    if user is None:
-        return jsonify({"error": "Unauthorized"}), 401
-
-    if not bcrypt.check_password_hash(user.password, password):
-        return jsonify({"error": "Unauthorized"}), 401
-    
-    session["user_id"] = user.id
-
-    return jsonify({
-        "id": user.id,
-        "email": user.email,
-    })
-
-@app.route("/logout", methods=["POST"])
-def logout_user():
-    if "user_id" in session:
-        session.pop("user_id")
-        return jsonify({"message": "Logout successful"}), 200
+    if role == 'passenger':
+        user = Passenger(username=username, email=email)
+        user.password = password
+    elif role == 'driver':
+        user = Driver(username=username, email=email)
+        user.password = password
+    elif role == 'admin':
+        user = Admin(username=username, email=email)
+        user.password = password
     else:
-        return jsonify({"error": "User not logged in"}), 400
+        return jsonify({'error': 'Invalid role selected'}), 400
 
-# if __name__ == "__main__":
-#     app.run(debug=True)
+    db.session.add(user)
+    token = generate_token()  # Generate a token
+    user.token = token  # Assign the token to the user
+    db.session.commit()
+    return jsonify({'message': 'Registration successful', 'token': token}), 201
 
-# from flask import Flask, request, jsonify
-# from flask_migrate import Migrate
-# from datetime import datetime
-# from flask import abort
-# from models import db, User, Bus, Booking
- 
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
 
+    user = Passenger.query.filter_by(email=email).first() or Driver.query.filter_by(email=email).first() or Admin.query.filter_by(email=email).first()
 
-# User authentication route
-# @app.route('/login', methods=['POST'])
-# def login():
-#     data = request.json
-#     email = data.get('email')
-#     password = data.get('password')
-#     user = User.query.filter_by(email=email, password=password).first()
-#     if user:
-#         return jsonify({'message': 'Login successful', 'role': user.role}), 200
-#     else:
-#         return jsonify({'error': 'Invalid email or password'}), 401
+    if user and user.verify_password(password):
+        login_user(user)
+        token = generate_token()  # Generate a new token
+        user.token = token  # Assign the new token to the user
+        db.session.commit()
+        return jsonify({'token': token}), 200
+    else:
+        return jsonify({'error': 'Invalid email or password'}), 401
 
-# Route to classify users based on their roles
-# @app.route('/users/<int:user_id>/classify', methods=['GET'])
-# def classify_user(user_id):
-#     user = User.query.get(user_id)
-#     if user:
-#         return jsonify({'message': 'User role classified', 'role': user.role}), 200
-#     else:
-#         return jsonify({'error': 'User not found'}), 404
-
+@app.route('/logout', methods=['POST'])
+@login_required
+def logout():
+    logout_user()
+    return jsonify({'message': 'You have been logged out'}), 200
 
 # Routes for bus management (for drivers)
 @app.route('/buses', methods=['POST'])
+@token_required
 def create_bus():
     try:
-        data = request.get_json()
-        driver_id = data.get('driver_id')
-        departure_time_str = data.get('departure_time')
-        departure_time = datetime.strptime(departure_time_str, '%I:%M %p')
-        bus = Bus(
-            number_plate=data.get('number_plate'),
-            no_of_seats=data.get('no_of_seats'),
-            cost_per_seat=data.get('cost_per_seat'),
-            route=data.get('route'),
-            departure_time=departure_time,
-            driver_id=driver_id
-        )
-        db.session.add(bus)
-        db.session.commit()
-        return jsonify({'message': 'Bus created successfully'}), 201
+        driver = current_user
+        if isinstance(driver, Driver):
+            data = request.get_json()
+            if not data:
+                return jsonify({'error': 'Request body is missing'}), 422
+
+            company_name = data.get('company_name')
+            number_plate = data.get('number_plate')
+            no_of_seats = data.get('no_of_seats')
+            cost_per_seat = data.get('cost_per_seat')
+            route = data.get('route')
+
+            if not all([company_name, number_plate, no_of_seats, cost_per_seat, route]):
+                return jsonify({'error': 'Missing required fields'}), 422
+
+            bus = Bus(
+                company_name=company_name,
+                number_plate=number_plate,
+                no_of_seats=no_of_seats,
+                cost_per_seat=cost_per_seat,
+                route=route,
+                driver_id=driver.id
+            )
+            db.session.add(bus)
+            db.session.commit()
+            return jsonify({'message': 'Bus created successfully'}), 201
+        else:
+            return jsonify({'error': 'You must be a logged-in driver to create a bus.'}), 401
     except Exception as e:
         db.session.rollback()
+        app.logger.error(f"Error creating bus: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 #Schedule buses
@@ -176,9 +135,12 @@ def schedule_bus():
     try:
         data = request.json
         # Parse the departure time string into a datetime object
-        departure_time = datetime.strptime(data.get('departure_time'), '%I:%M %p')
+
+        departure_time = datetime.strptime(data.get('departure_time'), '%Y-%m-%d %I:%M %p')
         # Create a new bus object with the parsed departure time and other data from the request
         new_bus = Bus(
+            company_name=data.get('company_name'),
+
             number_plate=data.get('number_plate'),
             no_of_seats=data.get('no_of_seats'),
             cost_per_seat=data.get('cost_per_seat'),
@@ -186,15 +148,14 @@ def schedule_bus():
             departure_time=departure_time,
             driver_id=data.get('driver_id')
         )
-        # Add the new bus to the database session
+
         db.session.add(new_bus)
-        # Commit the session to save the changes to the database
         db.session.commit()
         return jsonify({'message': 'Bus scheduled successfully'}), 201
     except Exception as e:
-        # If an error occurs, rollback the session and return an error response
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
 
 
 
@@ -269,7 +230,8 @@ def remove_bus(bus_id):
 def make_booking():
     try:
         data = request.get_json()
-        user_id = data.get('user_id')
+
+        passenger_id = data.get('passenger_id')
         bus_id = data.get('bus_id')
         seat_number = data.get('seat_number')
         
@@ -277,39 +239,37 @@ def make_booking():
         existing_booking = Booking.query.filter_by(bus_id=bus_id, seat_number=seat_number).first()
         if existing_booking:
             return jsonify({'error': 'Seat already booked'}), 400
-        
-        # Check if all seats are booked
+       
+
         bus = Bus.query.get(bus_id)
         if not bus:
             return jsonify({'error': 'Bus not found'}), 404
-        
+
+        # Check if all seats are booked
         if len(bus.bookings) >= bus.no_of_seats:
             return jsonify({'error': 'All seats are booked'}), 400
         
-        # Make the booking
-        booking = Booking(
-            user_id=user_id,
-            bus_id=bus_id,
-            seat_number=seat_number,
-            booking_time=datetime.now()
-        )
-        db.session.add(booking)
+        # Create a new booking with the current timestamp
+        booking_time = datetime.now()
+        new_booking = Booking(passenger_id=passenger_id, bus_id=bus_id, seat_number=seat_number, booking_time=booking_time)
+        db.session.add(new_booking)
         db.session.commit()
         
-        return jsonify({'message': 'Booking successful'}), 201
+        return jsonify({'message': 'Booking created successfully'}), 201
+    
     except Exception as e:
-        db.session.rollback()
         return jsonify({'error': str(e)}), 500
-
+    
 @app.route('/bookings/<int:booking_id>', methods=['DELETE'])
 def delete_booking(booking_id):
     booking = Booking.query.get(booking_id)
     if booking:
         db.session.delete(booking)
         db.session.commit()
-        return jsonify({'message': 'Booking deleted successfully'})
+        return jsonify({'message': 'Booking deleted successfully'}), 200
     else:
-        abort(404, description='Booking not found')
+        return jsonify({'error': 'Booking not found'}), 404
+
 
 @app.route('/bookings/<int:booking_id>', methods=['PUT'])
 def update_booking(booking_id):
@@ -317,21 +277,25 @@ def update_booking(booking_id):
     booking = Booking.query.get(booking_id)
     if booking:
         # Update the booking attributes with the new data
-        booking.user_id = data.get('user_id', booking.user_id)
+
+        booking.passenger_id = data.get('passenger_id', booking.passenger_id)
         booking.bus_id = data.get('bus_id', booking.bus_id)
         booking.seat_number = data.get('seat_number', booking.seat_number)
-        
+
         # Update the booking time if provided in the request data
         new_booking_time_str = data.get('booking_time')
         if new_booking_time_str:
-            new_booking_time = datetime.strptime(new_booking_time_str, '%Y-%m-%d %H:%M:%S')
-            booking.booking_time = new_booking_time
+            try:
+                new_booking_time = datetime.strptime(new_booking_time_str, '%Y-%m-%d %H:%M:%S')
+                booking.booking_time = new_booking_time
+            except ValueError:
+                return jsonify({'error': 'Invalid date format'}), 400
         
         # Commit the changes to the database
         db.session.commit()
-        return jsonify({'message': 'Booking updated successfully'})
+        return jsonify({'message': 'Booking updated successfully'}), 200
     else:
-        abort(404, description='Booking not found')
+        return jsonify({'error': 'Booking not found'}), 404
 
 @app.route('/buses/<int:bus_id>/seats', methods=['GET'])
 def view_available_seats(bus_id):
@@ -345,7 +309,7 @@ def view_available_seats(bus_id):
 
     return jsonify({'available_seats': available_seats})
 if __name__ == '__main__':
-    # Create the database tables
-    db.create_all()
-    # Run the Flask app
+    with app.app_context():
+        db.create_all()
     app.run(port=5555, debug=True)
+
