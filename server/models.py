@@ -1,3 +1,4 @@
+
 from flask_sqlalchemy import SQLAlchemy
 from uuid import uuid4
 from sqlalchemy import MetaData
@@ -79,9 +80,11 @@ class Admin(db.Model, UserMixin):
     def __repr__(self):
         return f"<Admin id={self.id}, username={self.username}, email={self.email}>"
 
+
 class Bus(db.Model):
     __tablename__ = 'bus'
     id = db.Column(db.Integer, primary_key=True)
+
     company_name = db.Column(db.String(100), nullable=False)
     driver_id = db.Column(db.Integer, db.ForeignKey('drivers.id'), unique=True, nullable=False)
     number_plate = db.Column(db.String(7), nullable=False, unique=True)
@@ -96,6 +99,7 @@ class Bus(db.Model):
 class Booking(db.Model):
     __tablename__ = 'bookings'
     id = db.Column(db.Integer, primary_key=True)
+
     passenger_id = db.Column(db.Integer, db.ForeignKey('passengers.id'), nullable=False)
     bus_id = db.Column(db.Integer, db.ForeignKey('bus.id'), nullable=False)
     seat_number = db.Column(db.Integer, nullable=False)
@@ -106,3 +110,4 @@ class Booking(db.Model):
 
     def __repr__(self):
         return f"<Booking id={self.id}, passenger_id={self.passenger_id}, bus_id={self.bus_id}, seat_number={self.seat_number}>"
+

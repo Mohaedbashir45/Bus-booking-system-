@@ -25,7 +25,6 @@ const Login = () => {
             password: values.password,
             role: userType,
           }),
-        });
 
         if (response.ok) {
           const data = await response.json();

@@ -4,6 +4,7 @@ import Navbar from './Navbar';
 
 const BusListingCard = ({ busName, route, departureTime, arrivalTime, remainingSeats, normalPrice, vipPrice }) => {
     const navigate = useNavigate();
+   
     const handleSelectSeat = () => {
         navigate('/seats', {
           state: {

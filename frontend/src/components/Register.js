@@ -8,6 +8,7 @@ const Register = () => {
   const [registrationMessage, setRegistrationMessage] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+
   const formik = useFormik({
     initialValues: {
       username: '',
@@ -16,6 +17,7 @@ const Register = () => {
       confirmPassword: '',
     },
     onSubmit: async (values) => {
+
       setIsSubmitting(true);
       try {
         const response = await fetch('http://127.0.0.1:5555/register', {
@@ -38,6 +40,7 @@ const Register = () => {
           setRegistrationMessage('Registration failed. Please try again.');
         }
       } catch (error) {
+
         console.error(error);
         setRegistrationMessage('An error occurred during registration. Please try again.');
       } finally {
@@ -168,12 +171,14 @@ const Register = () => {
                   value={formik.values.confirmPassword}
                 />
                 <button
+
                   type="submit"
                   className="w-full py-2 mb-2 bg-yellow-400 text-white font-semibold rounded hover:bg-yellow-500 transition-colors"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? 'Registering...' : 'Register'}
                 </button>
+
                 <p className="text-center text-gray-600">
                   Already have an account?{' '}
                   <Link

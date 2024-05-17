@@ -11,6 +11,29 @@ const BusSearch = () => {
   const [travelDate, setTravelDate] = useState('');
   const navigate = useNavigate();
 
+  // Fake data to be added
+  const fakeJourneys = [
+    {
+      Bus: 'Mash Poa',
+      boardingPoint: 'Nairobi CBD,Tea Room',
+      destination: 'Mombasa',
+      departureTime: '2024-05-20 08:00am',
+      arrivalTime: '2024-05-20 6:00pm',
+      seats: 50,
+      ticketPrice: 2500
+    },
+    {
+      Bus: 'Mbukinya Travellers',
+      boardingPoint: 'Nairobi, Machakos Country Bus',
+      destination: 'Kakamega',
+      departureTime: '2024-05-21 8:00:am',
+      arrivalTime: '2024-05-21 5:00pm',
+      seats: 40,
+      ticketPrice: 600
+    },
+    // Add more fake data as needed
+  ];
+
   const handleSubmit = (e) => {
     e.preventDefault();
     // Filter the upcomingJourneys array based on the user's input
@@ -19,12 +42,11 @@ const BusSearch = () => {
       const selectedDate = new Date(travelDate);
       return (
         journey.boardingPoint.toLowerCase().includes(boardingPoint.toLowerCase()) &&
-        journey.dropOffPoint.toLowerCase().includes(destination.toLowerCase()) &&
+        journey.destination.toLowerCase().includes(destination.toLowerCase()) &&
         departureDate.toDateString() === selectedDate.toDateString()
       );
     });
 
-    // Navigate to the /results route with the filtered journeys
     navigate('/results', { state: { filteredJourneys } });
   };
 
@@ -117,7 +139,8 @@ const BusSearch = () => {
       <div className="bg-white rounded-lg shadow-md p-8">
         <h2 className="text-xl font-bold mb-4 text-red-500">Upcoming Journeys</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {upcomingJourneys.map((journey, index) => (
+          {/* Render fake journeys */}
+          {fakeJourneys.map((journey, index) => (
             <div
               key={index}
               className="bg-gray-100 rounded-lg shadow-md p-6 flex flex-col justify-between"
@@ -130,7 +153,7 @@ const BusSearch = () => {
                   Boarding Point: {journey.boardingPoint}
                 </p>
                 <p className="text-gray-600 mb-1">
-                  Drop Off Point: {journey.dropOffPoint}
+                  Destination: {journey.destination}
                 </p>
                 <p className="text-gray-600 mb-1">
                   Departure Time: {journey.departureTime}
