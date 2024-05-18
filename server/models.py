@@ -88,10 +88,14 @@ class Bus(db.Model):
     no_of_seats = db.Column(db.Integer, nullable=False)
     cost_per_seat = db.Column(db.Integer, nullable=False)
     route = db.Column(db.String(100), nullable=False)
+    boarding_point = db.Column(db.String(100), nullable=False)
+    destination = db.Column(db.String(100), nullable=False)
+    departure_time = db.Column(db.DateTime, nullable=False)
+    arrival_time = db.Column(db.DateTime, nullable=False)
     driver = db.relationship('Driver', backref=db.backref('bus', uselist=False))
 
     def __repr__(self):
-        return f"Bus({self.id}, {self.company_name}, {self.driver_id}, {self.number_plate}, {self.no_of_seats}, {self.cost_per_seat}, {self.route})"
+        return f"Bus({self.id}, {self.company_name}, {self.driver_id}, {self.number_plate}, {self.no_of_seats}, {self.cost_per_seat}, {self.route}, {self.boarding_point}, {self.destination}, {self.departure_time}, {self.arrival_time})"
 
 class Booking(db.Model):
     __tablename__ = 'bookings'
@@ -99,7 +103,7 @@ class Booking(db.Model):
     passenger_id = db.Column(db.Integer, db.ForeignKey('passengers.id'), nullable=False)
     bus_id = db.Column(db.Integer, db.ForeignKey('bus.id'), nullable=False)
     seat_number = db.Column(db.Integer, nullable=False)
-    booking_time = db.Column(db.String, nullable=False)
+    booking_time = db.Column(db.DateTime, nullable=False)
 
     passenger = db.relationship('Passenger', backref=db.backref('bookings', lazy=True))
     bus = db.relationship('Bus', backref=db.backref('bookings', lazy=True))

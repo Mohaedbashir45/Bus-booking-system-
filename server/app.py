@@ -9,10 +9,20 @@ from datetime import datetime
 from auth import token_required, verify_token, generate_token
 
 app = Flask(__name__)
-cors = CORS(app, resources={r"/buses/*": {
-    "origins": ["http://localhost:3000"],
-    "supports_credentials": True
-}})
+cors = CORS(app, resources={
+    r"/buses/*": {
+        "origins": ["http://localhost:3000"],
+        "supports_credentials": True
+    },
+    r"/register": {
+        "origins": ["http://localhost:3000"],
+        "supports_credentials": True
+    },
+    r"/login": {
+        "origins": ["http://localhost:3000"],
+        "supports_credentials": True
+    }
+})
 
 # Configure SQLAlchemy
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
@@ -102,8 +112,12 @@ def create_bus():
             no_of_seats = data.get('no_of_seats')
             cost_per_seat = data.get('cost_per_seat')
             route = data.get('route')
+            boarding_point = data.get('boarding_point')
+            destination = data.get('destination')
+            departure_time = datetime.fromisoformat(data.get('departure_time'))
+            arrival_time = datetime.fromisoformat(data.get('arrival_time'))
 
-            if not all([company_name, number_plate, no_of_seats, cost_per_seat, route]):
+            if not all([company_name, number_plate, no_of_seats, cost_per_seat, route, boarding_point, destination, departure_time, arrival_time]):
                 return jsonify({'error': 'Missing required fields'}), 422
 
             bus = Bus(
@@ -112,6 +126,10 @@ def create_bus():
                 no_of_seats=no_of_seats,
                 cost_per_seat=cost_per_seat,
                 route=route,
+                boarding_point=boarding_point,
+                destination=destination,
+                departure_time=departure_time,
+                arrival_time=arrival_time,
                 driver_id=driver.id
             )
             db.session.add(bus)
@@ -123,6 +141,7 @@ def create_bus():
         db.session.rollback()
         app.logger.error(f"Error creating bus: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
 #Schedule buses
 @app.route('/buses/schedule', methods=['POST'])
 def schedule_bus():
