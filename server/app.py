@@ -103,7 +103,6 @@ def logout():
 
 # Routes for bus management (for drivers)
 @app.route('/buses', methods=['POST'])
-@token_required
 def create_bus():
     try:
         driver = current_user
@@ -147,185 +146,150 @@ def create_bus():
         app.logger.error(f"Error creating bus: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
-#Schedule buses
-@app.route('/buses/schedule', methods=['POST'])
-def schedule_bus():
-    try:
-        data = request.json
-        # Parse the departure time string into a datetime object
-
-        departure_time = datetime.strptime(data.get('departure_time'), '%Y-%m-%d %I:%M %p')
-        # Create a new bus object with the parsed departure time and other data from the request
-        new_bus = Bus(
-            company_name=data.get('company_name'),
-
-            number_plate=data.get('number_plate'),
-            no_of_seats=data.get('no_of_seats'),
-            cost_per_seat=data.get('cost_per_seat'),
-            route=data.get('route'),
-            departure_time=departure_time,
-            driver_id=data.get('driver_id')
-        )
-
-        db.session.add(new_bus)
-        db.session.commit()
-        return jsonify({'message': 'Bus scheduled successfully'}), 201
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
-
-
-
-@app.route('/buses/<int:bus_id>/prices', methods=['POST'])
-def add_price_per_seat(bus_id):
-    try:
-        data = request.get_json()
-        new_price_per_seat = data.get('price_per_seat')
-        if new_price_per_seat is None:
-            return jsonify({'error': 'Price per seat is required'}), 400
-        
-        bus = Bus.query.get(bus_id)
-        if not bus:
-            return jsonify({'error': 'Bus not found'}), 404
-
-        bus.cost_per_seat = new_price_per_seat
-        db.session.commit()
-        return jsonify({'message': 'Price per seat updated successfully'}), 200
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
-
 @app.route('/buses/<int:bus_id>', methods=['PUT'])
 def update_bus(bus_id):
     try:
-        data = request.json
-        bus = Bus.query.get(bus_id)
-        if not bus:
-            return jsonify({'error': 'Bus not found'}), 404
+        driver = current_user
+        if isinstance(driver, Driver):
+            data = request.get_json()
+            if not data:
+                return jsonify({'error': 'Request body is missing'}), 422
 
-        # Update the bus attributes
-        if 'number_plate' in data:
-            bus.number_plate = data['number_plate']
-        if 'no_of_seats' in data:
-            bus.no_of_seats = data['no_of_seats']
-        if 'cost_per_seat' in data:
-            bus.cost_per_seat = data['cost_per_seat']
-        if 'route' in data:
-            bus.route = data['route']
-        if 'departure_time' in data:
-            bus.departure_time = datetime.strptime(data['departure_time'], '%I:%M %p')
+            bus = Bus.query.get(bus_id)
+            if not bus:
+                return jsonify({'error': 'Bus not found'}), 404
 
-        # Commit changes to the database
-        db.session.commit()
+            if bus.driver_id != driver.id:
+                return jsonify({'error': 'You are not authorized to update this bus'}), 403
 
-        return jsonify({'message': 'Bus updated successfully'}), 200
+            company_name = data.get('company_name', bus.company_name)
+            number_plate = data.get('number_plate', bus.number_plate)
+            no_of_seats = data.get('no_of_seats', bus.no_of_seats)
+            cost_per_seat = data.get('cost_per_seat', bus.cost_per_seat)
+            route = data.get('route', bus.route)
+            boarding_point = data.get('boarding_point', bus.boarding_point)
+            destination = data.get('destination', bus.destination)
+            departure_time = data.get('departure_time', bus.departure_time)
+            arrival_time = data.get('arrival_time', bus.arrival_time)
+
+            bus.company_name = company_name
+            bus.number_plate = number_plate
+            bus.no_of_seats = no_of_seats
+            bus.cost_per_seat = cost_per_seat
+            bus.route = route
+            bus.boarding_point = boarding_point
+            bus.destination = destination
+            bus.departure_time = datetime.fromisoformat(departure_time) if departure_time else bus.departure_time
+            bus.arrival_time = datetime.fromisoformat(arrival_time) if arrival_time else bus.arrival_time
+
+            db.session.commit()
+            return jsonify({'message': 'Bus updated successfully'}), 200
+        else:
+            return jsonify({'error': 'You must be a logged-in driver to update a bus.'}), 401
     except Exception as e:
         db.session.rollback()
+        app.logger.error(f"Error updating bus: {str(e)}")
         return jsonify({'error': str(e)}), 500
-
-
 @app.route('/buses/<int:bus_id>', methods=['DELETE'])
-def remove_bus(bus_id):
+def delete_bus(bus_id):
     try:
-        bus = Bus.query.get(bus_id)
-        if bus:
-            
-            Booking.query.filter_by(bus_id=bus_id).delete()
+        driver = current_user
+        if isinstance(driver, Driver):
+            bus = Bus.query.get(bus_id)
+            if not bus:
+                return jsonify({'error': 'Bus not found'}), 404
+
+            if bus.driver_id != driver.id:
+                return jsonify({'error': 'You are not authorized to delete this bus'}), 403
+
             db.session.delete(bus)
             db.session.commit()
-            return jsonify({'message': 'Bus and related bookings removed successfully'}), 200
+            return jsonify({'message': 'Bus deleted successfully'}), 200
         else:
-            return jsonify({'error': 'Bus not found'}), 404
+            return jsonify({'error': 'You must be a logged-in driver to delete a bus.'}), 401
     except Exception as e:
         db.session.rollback()
+        app.logger.error(f"Error deleting bus: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+
     
 # Routes for Bookings (for Customers)
-
-@app.route('/bookings', methods=['POST'])
-def make_booking():
-    try:
-        data = request.get_json()
-
-        passenger_id = data.get('passenger_id')
-        bus_id = data.get('bus_id')
-        seat_number = data.get('seat_number')
-        
-        # Check if the seat is already booked
-        existing_booking = Booking.query.filter_by(bus_id=bus_id, seat_number=seat_number).first()
-        if existing_booking:
-            return jsonify({'error': 'Seat already booked'}), 400
-       
-
-        bus = Bus.query.get(bus_id)
-        if not bus:
-            return jsonify({'error': 'Bus not found'}), 404
-
-        # Check if all seats are booked
-        if len(bus.bookings) >= bus.no_of_seats:
-            return jsonify({'error': 'All seats are booked'}), 400
-        
-        # Create a new booking with the current timestamp
-        booking_time = datetime.now()
-        new_booking = Booking(passenger_id=passenger_id, bus_id=bus_id, seat_number=seat_number, booking_time=booking_time)
-        db.session.add(new_booking)
-        db.session.commit()
-        
-        return jsonify({'message': 'Booking created successfully'}), 201
-    
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-    
-@app.route('/bookings/<int:booking_id>', methods=['DELETE'])
-def delete_booking(booking_id):
-    booking = Booking.query.get(booking_id)
-    if booking:
-        db.session.delete(booking)
-        db.session.commit()
-        return jsonify({'message': 'Booking deleted successfully'}), 200
-    else:
-        return jsonify({'error': 'Booking not found'}), 404
-
-
-@app.route('/bookings/<int:booking_id>', methods=['PUT'])
-def update_booking(booking_id):
-    data = request.json
-    booking = Booking.query.get(booking_id)
-    if booking:
-        # Update the booking attributes with the new data
-
-        booking.passenger_id = data.get('passenger_id', booking.passenger_id)
-        booking.bus_id = data.get('bus_id', booking.bus_id)
-        booking.seat_number = data.get('seat_number', booking.seat_number)
-
-        # Update the booking time if provided in the request data
-        new_booking_time_str = data.get('booking_time')
-        if new_booking_time_str:
-            try:
-                new_booking_time = datetime.strptime(new_booking_time_str, '%Y-%m-%d %H:%M:%S')
-                booking.booking_time = new_booking_time
-            except ValueError:
-                return jsonify({'error': 'Invalid date format'}), 400
-        
-        # Commit the changes to the database
-        db.session.commit()
-        return jsonify({'message': 'Booking updated successfully'}), 200
-    else:
-        return jsonify({'error': 'Booking not found'}), 404
-
 @app.route('/buses/<int:bus_id>/seats', methods=['GET'])
-def view_available_seats(bus_id):
+def get_available_seats(bus_id):
     bus = Bus.query.get(bus_id)
     if not bus:
         return jsonify({'error': 'Bus not found'}), 404
 
-    total_seats = bus.no_of_seats
-    booked_seats = Booking.query.filter_by(bus_id=bus_id).count()
-    available_seats = total_seats - booked_seats
+    booked_seats = [booking.seat_number for booking in bus.bookings]
+    available_seats = [seat for seat in range(1, bus.no_of_seats + 1) if seat not in booked_seats]
 
-    return jsonify({'available_seats': available_seats})
+    return jsonify({'available_seats': available_seats}), 200
+@app.route('/buses/<int:bus_id>/book', methods=['POST'])
+@login_required
+def book_seat(bus_id):
+    data = request.get_json()
+    seat_number = data.get('seat_number')
+
+    bus = Bus.query.get(bus_id)
+    if not bus:
+        return jsonify({'error': 'Bus not found'}), 404
+
+    if seat_number < 1 or seat_number > bus.no_of_seats:
+        return jsonify({'error': 'Invalid seat number'}), 400
+
+    booked_seats = [booking.seat_number for booking in bus.bookings]
+    if seat_number in booked_seats:
+        return jsonify({'error': 'Seat is already booked'}), 400
+
+    passenger = current_user
+    booking = Booking(passenger_id=passenger.id, bus_id=bus.id, seat_number=seat_number, booking_time=datetime.now())
+    db.session.add(booking)
+    db.session.commit()
+
+    return jsonify({'message': 'Seat booked successfully', 'booking_id': booking.id}), 201
+@app.route('/bookings/<int:booking_id>', methods=['PUT'])
+@login_required
+def update_booking(booking_id):
+    booking = Booking.query.get(booking_id)
+    if not booking:
+        return jsonify({'error': 'Booking not found'}), 404
+
+    passenger = current_user
+    if booking.passenger_id != passenger.id:
+        return jsonify({'error': 'You are not authorized to update this booking'}), 403
+
+    data = request.get_json()
+    new_seat_number = data.get('seat_number')
+
+    bus = booking.bus
+    if new_seat_number < 1 or new_seat_number > bus.no_of_seats:
+        return jsonify({'error': 'Invalid seat number'}), 400
+
+    booked_seats = [b.seat_number for b in bus.bookings if b.id != booking.id]
+    if new_seat_number in booked_seats:
+        return jsonify({'error': 'Seat is already booked'}), 400
+
+    booking.seat_number = new_seat_number
+    db.session.commit()
+
+    return jsonify({'message': 'Booking updated successfully'}), 200
+@app.route('/bookings/<int:booking_id>', methods=['DELETE'])
+@login_required
+def delete_booking(booking_id):
+    booking = Booking.query.get(booking_id)
+    if not booking:
+        return jsonify({'error': 'Booking not found'}), 404
+
+    passenger = current_user
+    if booking.passenger_id != passenger.id:
+        return jsonify({'error': 'You are not authorized to delete this booking'}), 403
+
+    db.session.delete(booking)
+    db.session.commit()
+
+    return jsonify({'message': 'Booking deleted successfully'}), 200
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
