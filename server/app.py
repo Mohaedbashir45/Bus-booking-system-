@@ -1,4 +1,3 @@
-
 from flask import Flask, request, jsonify
 from flask_migrate import Migrate
 from flask_cors import CORS
@@ -7,33 +6,21 @@ from datetime import datetime
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
 from models import db, Admin, Passenger, Driver, Bus, Booking
 from datetime import datetime
-from auth import token_required, verify_token, generate_token
+from auth import generate_token, verify_token
 
 app = Flask(__name__)
-cors = CORS(app, resources={
-    r"/buses/*": {
-        "origins": ["http://localhost:3000"],
-        "supports_credentials": True
-    },
-    r"/register": {
-        "origins": ["http://localhost:3000"],
-        "supports_credentials": True
-    },
-    r"/login": {
-        "origins": ["http://localhost:3000"],
-        "supports_credentials": True
-    }
-})
-
+CORS(app, supports_credentials=True)  # Allow credentials globally
 
 # Configure SQLAlchemy
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.json.compact = False
 
-
 # Configure Flask-Session
 app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 # Initialize extensions
 db.init_app(app)
@@ -46,11 +33,9 @@ login_manager.init_app(app)
 def load_user(user_id):
     return Passenger.query.get(int(user_id)) or Driver.query.get(int(user_id)) or Admin.query.get(int(user_id))
 
-
 @app.route('/')
 def index():
     return "Welcome to the Go-Bus API"
-
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -73,10 +58,8 @@ def register():
         return jsonify({'error': 'Invalid role selected'}), 400
 
     db.session.add(user)
-    token = generate_token()  # Generate a token
-    user.token = token  # Assign the token to the user
     db.session.commit()
-    return jsonify({'message': 'Registration successful', 'token': token}), 201
+    return jsonify({'message': 'Registration successful'}), 201
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -91,15 +74,22 @@ def login():
         token = generate_token()  # Generate a new token
         user.token = token  # Assign the new token to the user
         db.session.commit()
-        return jsonify({'token': token}), 200
+        response = jsonify({'token': token})
+        response.set_cookie('session', token, httponly=True, secure=False)  # Set cookie attributes
+        return response, 200
     else:
         return jsonify({'error': 'Invalid email or password'}), 401
 
 @app.route('/logout', methods=['POST'])
-@login_required
 def logout():
-    logout_user()
-    return jsonify({'message': 'You have been logged out'}), 200
+    user = current_user
+    if user:
+        user.token = None  # Clear the user's token
+        db.session.commit()
+        logout_user()
+    response = jsonify({'message': 'You have been logged out'})
+    response.set_cookie('session', '', expires=0)  # Clear the session cookie
+    return response, 200
 
 # Routes for bus management (for drivers)
 @app.route('/buses', methods=['POST'])
