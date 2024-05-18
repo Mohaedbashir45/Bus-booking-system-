@@ -1,3 +1,4 @@
+
 from flask import Flask, request, jsonify
 from flask_migrate import Migrate
 from flask_cors import CORS
@@ -24,10 +25,12 @@ cors = CORS(app, resources={
     }
 })
 
+
 # Configure SQLAlchemy
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.json.compact = False
+
 
 # Configure Flask-Session
 app.config['SESSION_TYPE'] = 'filesystem'
@@ -43,9 +46,11 @@ login_manager.init_app(app)
 def load_user(user_id):
     return Passenger.query.get(int(user_id)) or Driver.query.get(int(user_id)) or Admin.query.get(int(user_id))
 
+
 @app.route('/')
 def index():
     return "Welcome to the Go-Bus API"
+
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -148,10 +153,12 @@ def schedule_bus():
     try:
         data = request.json
         # Parse the departure time string into a datetime object
+
         departure_time = datetime.strptime(data.get('departure_time'), '%Y-%m-%d %I:%M %p')
         # Create a new bus object with the parsed departure time and other data from the request
         new_bus = Bus(
             company_name=data.get('company_name'),
+
             number_plate=data.get('number_plate'),
             no_of_seats=data.get('no_of_seats'),
             cost_per_seat=data.get('cost_per_seat'),
@@ -159,12 +166,15 @@ def schedule_bus():
             departure_time=departure_time,
             driver_id=data.get('driver_id')
         )
+
         db.session.add(new_bus)
         db.session.commit()
         return jsonify({'message': 'Bus scheduled successfully'}), 201
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+
 
 
 @app.route('/buses/<int:bus_id>/prices', methods=['POST'])
@@ -238,6 +248,7 @@ def remove_bus(bus_id):
 def make_booking():
     try:
         data = request.get_json()
+
         passenger_id = data.get('passenger_id')
         bus_id = data.get('bus_id')
         seat_number = data.get('seat_number')
@@ -246,12 +257,12 @@ def make_booking():
         existing_booking = Booking.query.filter_by(bus_id=bus_id, seat_number=seat_number).first()
         if existing_booking:
             return jsonify({'error': 'Seat already booked'}), 400
-        
-        # Check if the bus exists
+       
+
         bus = Bus.query.get(bus_id)
         if not bus:
             return jsonify({'error': 'Bus not found'}), 404
-        
+
         # Check if all seats are booked
         if len(bus.bookings) >= bus.no_of_seats:
             return jsonify({'error': 'All seats are booked'}), 400
@@ -277,12 +288,14 @@ def delete_booking(booking_id):
     else:
         return jsonify({'error': 'Booking not found'}), 404
 
+
 @app.route('/bookings/<int:booking_id>', methods=['PUT'])
 def update_booking(booking_id):
     data = request.json
     booking = Booking.query.get(booking_id)
     if booking:
         # Update the booking attributes with the new data
+
         booking.passenger_id = data.get('passenger_id', booking.passenger_id)
         booking.bus_id = data.get('bus_id', booking.bus_id)
         booking.seat_number = data.get('seat_number', booking.seat_number)
@@ -302,7 +315,6 @@ def update_booking(booking_id):
     else:
         return jsonify({'error': 'Booking not found'}), 404
 
-
 @app.route('/buses/<int:bus_id>/seats', methods=['GET'])
 def view_available_seats(bus_id):
     bus = Bus.query.get(bus_id)
@@ -318,3 +330,4 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     app.run(port=5555, debug=True)
+
