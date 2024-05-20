@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useFormik } from 'formik';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
+import Cookies from 'js-cookie';
 
 const Login = () => {
   const [userType, setUserType] = useState('passenger');
@@ -19,19 +20,50 @@ const Login = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('accessToken') || ''}`, // Ensure this is correctly handled
           },
           body: JSON.stringify({
             email: values.email,
             password: values.password,
             role: userType,
           }),
+          credentials: 'include', // Ensure cookies are included in the request
+        });
+
+        console.log(response); // Log the response to check the headers and status
 
         if (response.ok) {
           const data = await response.json();
           // Store the token in localStorage
           localStorage.setItem('accessToken', data.token);
-          // Redirect to booking route
-          navigate('/booking');
+          console.log('Token stored in localStorage:', data.token); // Log to verify
+
+          // Get the session cookie from the response headers
+          const sessionCookie = response.headers.get('Set-Cookie');
+          console.log('Session cookie:', sessionCookie); // Log to verify
+
+          if (sessionCookie) {
+            // Extract the actual session cookie value (this may vary depending on your setup)
+            const sessionValue = sessionCookie.split(';')[0].split('=')[1];
+            // Store the session cookie
+            Cookies.set('session', sessionValue);
+            console.log('Session cookie stored:', sessionValue); // Log to verify
+          }
+
+          // Redirect based on user type
+          switch (userType) {
+            case 'passenger':
+              navigate('/booking');
+              break;
+            case 'driver':
+              navigate('/dashboard');
+              break;
+            case 'admin':
+              navigate('/admin');
+              break;
+            default:
+              break;
+          }
         } else {
           const data = await response.json();
           setLoginMessage(data.error || 'Invalid credentials. Please try again.');
@@ -42,6 +74,8 @@ const Login = () => {
       }
     },
   });
+
+
 
   return (
     <>

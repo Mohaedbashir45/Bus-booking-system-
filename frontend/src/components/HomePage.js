@@ -18,7 +18,6 @@ const HomePage = () => {
         className="max-w-full h-auto rounded-lg shadow-md"
       />
     </div>
-
     <div className="sm:w-1/2">
       <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 text-center sm:text-left">
         Embrace the Journey, Leave the Stress Behind
@@ -27,15 +26,52 @@ const HomePage = () => {
         We understand that travel should be an enjoyable experience, not a hassle.
       </p>
       <div className="flex justify-center sm:justify-start">
-        <Link to="/register">
-          <button className="bg-white text-red-500 py-2 md:py-3 px-4 md:px-6 rounded-md font-semibold hover:bg-red-600 hover:text-white transition-colors duration-300">
-            Get Started
+        <Link to="/passenger-register">
+          <button className="bg-gradient-to-r from-red-600 to-red-700 text-white py-3 px-6 rounded-full font-semibold shadow-lg hover:shadow-xl transition-transform hover:scale-105 transition-all duration-300 mr-4 flex items-center">
+            <span className="mr-2">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </span>
+            Get Started (Passengers)
+          </button>
+        </Link>
+        <Link to="/driver-register">
+          <button className="bg-gradient-to-r from-red-600 to-red-700 text-white py-3 px-6 rounded-full font-semibold shadow-lg hover:shadow-xl transition-transform hover:scale-105 transition-all duration-300 flex items-center">
+            <span className="mr-2">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </span>
+            Get Started (Drivers)
           </button>
         </Link>
       </div>
     </div>
   </div>
-</section>     
+</section> 
 {/* Features Section */}
 <section className="py-8 sm:py-12 px-4">
   <div className="max-w-screen-xl mx-auto">

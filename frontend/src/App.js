@@ -9,7 +9,10 @@ import SeatSelection from './components/SeatSelection';
 import Payment from './components/Payment';
 import AdminDashboard from './components/AdminDashboard';
 import { JourneyProvider } from './components/JourneyContext';
-import Dashboard from './components/Dashboard';
+import DriverRegister from './components/DriverRegister';
+import DriverLogin from './components/DriverLogin';
+import PassengerLogin from './components/PassengerLogin';
+import PassengerRegister from './components/PassengerRegister';
 
 
 const App = () => {
@@ -25,7 +28,10 @@ const App = () => {
         <Route path="/seats" element={<SeatSelection/>} />
         <Route path="/payment" element={<Payment />} />
         <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/driver-register" element={<DriverRegister />} />
+        <Route path="/driver-login" element={<DriverLogin />} />
+        <Route path="/passenger-register" element={<PassengerRegister />} />
+        <Route path="/passenger-login" element={<PassengerLogin />} />
         </Routes>
       </JourneyProvider>
     </Router>
