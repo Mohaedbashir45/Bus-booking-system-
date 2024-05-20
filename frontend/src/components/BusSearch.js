@@ -1,177 +1,134 @@
-import React, { useState, useContext } from 'react';
-import { FaCalendarAlt, FaMapMarkerAlt } from 'react-icons/fa';
-import Navbar from './Navbar';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { JourneyContext } from './JourneyContext';
 
 const BusSearch = () => {
-  const { upcomingJourneys } = useContext(JourneyContext);
-  const [boardingPoint, setBoardingPoint] = useState('');
-  const [destination, setDestination] = useState('');
-  const [travelDate, setTravelDate] = useState('');
-  const navigate = useNavigate();
-
-  // Fake data to be added
-  const fakeJourneys = [
-    {
-      Bus: 'Mash Poa',
-      boardingPoint: 'Nairobi CBD,Tea Room',
-      destination: 'Mombasa',
-      departureTime: '2024-05-20 08:00am',
-      arrivalTime: '2024-05-20 6:00pm',
-      seats: 50,
-      ticketPrice: 2500
-    },
-    {
-      Bus: 'Mbukinya Travellers',
-      boardingPoint: 'Nairobi, Machakos Country Bus',
-      destination: 'Kakamega',
-      departureTime: '2024-05-21 8:00:am',
-      arrivalTime: '2024-05-21 5:00pm',
-      seats: 40,
-      ticketPrice: 600
-    },
-    // Add more fake data as needed
-  ];
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Filter the upcomingJourneys array based on the user's input
-    const filteredJourneys = upcomingJourneys.filter((journey) => {
-      const departureDate = new Date(journey.departureTime);
-      const selectedDate = new Date(travelDate);
-      return (
-        journey.boardingPoint.toLowerCase().includes(boardingPoint.toLowerCase()) &&
-        journey.destination.toLowerCase().includes(destination.toLowerCase()) &&
-        departureDate.toDateString() === selectedDate.toDateString()
-      );
+    const [buses, setBuses] = useState([]);
+    const [filteredBuses, setFilteredBuses] = useState([]);
+    const [message, setMessage] = useState('');
+    const [error, setError] = useState('');
+    const [searchCriteria, setSearchCriteria] = useState({
+        boardingPoint: '',
+        destination: '',
+        travelDate: ''
     });
 
-    navigate('/results', { state: { filteredJourneys } });
-  };
+    const navigate = useNavigate();
 
-  return (
-    <div className="min-h-screen">
-      <Navbar />
-      {/* Hero Section */}
-      <div className="bg-red-500 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-bold text-white">
-            Welcome to Bus Booking App
-          </h1>
-          <p className="mt-2 text-xl text-white">
-            Find and book your bus tickets with ease.
-          </p>
+    useEffect(() => {
+        axios.get('http://127.0.0.1:5555/buses')
+            .then(response => setBuses(response.data))
+            .catch(error => setError('Could not fetch buses'));
+    }, []);
+
+    const fetchAvailableSeats = async (busId) => {
+        try {
+            const response = await axios.get(`http://127.0.0.1:5555/buses/available-seats/${busId}`);
+            return response.data.available_seats;
+        } catch (error) {
+            console.error('Error fetching available seats:', error);
+            return null;
+        }
+    };
+
+    const fetchCostPerSeatById = async (busId) => {
+        try {
+            const response = await axios.get(`http://127.0.0.1:5555/buses/cost-per-seat/${busId}`);
+            return response.data.cost_per_seat;
+        } catch (error) {
+            console.error('Error fetching cost per seat:', error);
+            return null;
+        }
+    };
+
+    const handleSearchChange = (e) => {
+        setSearchCriteria({ ...searchCriteria, [e.target.name]: e.target.value });
+    };
+
+    const handleSearch = async (e) => {
+        e.preventDefault();
+        const { boardingPoint, destination, travelDate } = searchCriteria;
+        const filtered = buses.filter(bus =>
+            bus.route.includes(`${boardingPoint}-${destination}`) &&
+            bus.departure_time && bus.departure_time.startsWith(travelDate)
+        );
+
+        const updatedBuses = await Promise.all(
+            filtered.map(async (bus) => {
+                const availableSeats = await fetchAvailableSeats(bus.id);
+                const costPerSeat = await fetchCostPerSeatById(bus.id);
+                return { ...bus, availableSeats, costPerSeat };
+            })
+        );
+
+        setFilteredBuses(updatedBuses);
+        if (updatedBuses.length === 0) {
+            setMessage('No buses found for the specified route and date');
+        } else {
+            setMessage('');
+        }
+    };
+
+    const handleBookNow = (bus) => {
+        navigate('/seats', { state: bus });
+    };
+
+    return (
+        <div className="bus-list-container">
+            <h2>Bus List</h2>
+
+            <form onSubmit={handleSearch} className="search-form">
+                <label>
+                    Boarding Point:
+                    <input
+                        type="text"
+                        name="boardingPoint"
+                        value={searchCriteria.boardingPoint}
+                        onChange={handleSearchChange}
+                        required
+                    />
+                </label>
+                <label>
+                    Destination:
+                    <input
+                        type="text"
+                        name="destination"
+                        value={searchCriteria.destination}
+                        onChange={handleSearchChange}
+                        required
+                    />
+                </label>
+                <label>
+                    Day of Travel:
+                    <input
+                        type="date"
+                        name="travelDate"
+                        value={searchCriteria.travelDate}
+                        onChange={handleSearchChange}
+                        required
+                    />
+                </label>
+                <button type="submit">Search Buses</button>
+            </form>
+
+            {filteredBuses.length > 0 ? (
+                filteredBuses.map((bus) => (
+                    <div key={bus.id} className="bus-item">
+                        <p>Company Name: {bus.company_name}</p>
+                        <p>Plate Number: {bus.number_plate}</p>
+                        <p>Price per Seat: KSH {bus.costPerSeat}</p>
+                        <p>Available Seats: {bus.availableSeats}</p>
+                        <button onClick={() => handleBookNow(bus)}>Book Now</button>
+                    </div>
+                ))
+            ) : (
+                <p>No buses available</p>
+            )}
+
+            {message && <p className="message">{message}</p>}
+            {error && <p className="error">{error}</p>}
         </div>
-      </div>
-      {/* Search Section */}
-      <div className="bg-gray-100 py-16">
-        <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-8">
-          <h2 className="text-2xl font-bold mb-6 text-red-500">
-            Search for Bus
-          </h2>
-          <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-              <label
-                htmlFor="boardingPoint"
-                className="block text-gray-700 font-bold mb-2"
-              >
-                Boarding Point
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  id="boardingPoint"
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  placeholder="Enter boarding point"
-                  value={boardingPoint}
-                  onChange={(e) => setBoardingPoint(e.target.value)}
-                />
-                <FaMapMarkerAlt className="absolute right-3 top-3 text-gray-400" />
-              </div>
-            </div>
-            <div className="mb-4">
-              <label
-                htmlFor="destination"
-                className="block text-gray-700 font-bold mb-2"
-              >
-                Destination
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  id="destination"
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  placeholder="Enter destination"
-                  value={destination}
-                  onChange={(e) => setDestination(e.target.value)}
-                />
-                <FaMapMarkerAlt className="absolute right-3 top-3 text-gray-400" />
-              </div>
-            </div>
-            <div className="mb-6">
-              <label
-                htmlFor="travelDate"
-                className="block text-gray-700 font-bold mb-2"
-              >
-                Travel Date
-              </label>
-              <div className="relative">
-                <input
-                  type="date"
-                  id="travelDate"
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  value={travelDate}
-                  onChange={(e) => setTravelDate(e.target.value)}
-                />
-                <FaCalendarAlt className="absolute right-3 top-3 text-gray-400" />
-              </div>
-            </div>
-            <button
-              type="submit"
-              className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full"
-            >
-              Find Bus
-            </button>
-          </form>
-        </div>
-      </div>
-      <div className="bg-white rounded-lg shadow-md p-8">
-        <h2 className="text-xl font-bold mb-4 text-red-500">Upcoming Journeys</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {/* Render fake journeys */}
-          {fakeJourneys.map((journey, index) => (
-            <div
-              key={index}
-              className="bg-gray-100 rounded-lg shadow-md p-6 flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex items-center mb-2">
-                  <h3 className="text-lg font-bold text-red-500 mr-2">{journey.Bus}</h3>
-                </div>
-                <p className="text-gray-600 mb-1">
-                  Boarding Point: {journey.boardingPoint}
-                </p>
-                <p className="text-gray-600 mb-1">
-                  Destination: {journey.destination}
-                </p>
-                <p className="text-gray-600 mb-1">
-                  Departure Time: {journey.departureTime}
-                </p>
-                <p className="text-gray-600 mb-1">
-                  Arrival Time: {journey.arrivalTime}
-                </p>
-                <p className="text-gray-600 mb-1">Seats: {journey.seats}</p>
-                <p className="text-gray-600 mb-1">
-                  Ticket Price: Ksh {journey.ticketPrice}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default BusSearch;
